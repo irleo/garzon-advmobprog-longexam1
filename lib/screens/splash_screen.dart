@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../constants.dart';
 import '../services/user_service.dart';
 import '../session/session.dart';
@@ -99,7 +98,7 @@ class _SplashScreenState extends State<SplashScreen> {
     final userService = UserService();
     try {
       final user = await userService.restoreUser();
-      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      await Future<void>.delayed(const Duration(seconds: 3));
       Session.authenticatedUser = user;
     } catch (error) {
       debugPrint('Session restore failed: $error');
@@ -108,7 +107,7 @@ class _SplashScreenState extends State<SplashScreen> {
       userService.dispose();
     }
     if (!mounted) return;
-    final route = Session.authenticatedUser == null ? '/signin' : '/home';
+    final route = Session.authenticatedUser == null ? '/login' : '/home';
     Navigator.pushNamedAndRemoveUntil(context, route, (_) => false);
   }
 

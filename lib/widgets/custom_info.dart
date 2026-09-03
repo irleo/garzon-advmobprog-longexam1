@@ -20,9 +20,14 @@ class CustomInformation extends StatelessWidget {
     this.postId,
     this.onTap,
   });
-  
+
   @override
   Widget build(BuildContext context) {
+    final avatar = notificationIcon == null || notificationIcon!.isEmpty
+        ? null
+        : notificationIcon!.startsWith('http')
+        ? NetworkImage(notificationIcon!) as ImageProvider<Object>
+        : AssetImage(notificationIcon!);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -33,10 +38,10 @@ class CustomInformation extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            notificationIcon != null
+            avatar != null
                 ? CircleAvatar(
                     radius: ScreenUtil().setSp(25),
-                    backgroundImage: AssetImage(notificationIcon!),
+                    backgroundImage: avatar,
                   )
                 : const CircleAvatar(
                     radius: 25,

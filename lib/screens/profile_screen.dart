@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-
-import '../models/post.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../screens/newsfeed_screen.dart';
+import '../constants.dart';
+import '../widgets/custom_dialogs.dart';
+import '../widgets/custom_font.dart';
+import '../widgets/custom_button.dart';
 import '../models/user.dart';
-import '../services/post_service.dart';
-import '../widgets/post_card.dart';
-import '../widgets/user_avatar.dart';
 import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,32 +19,13 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final PostService _postService = PostService();
-  late Future<List<Post>> _posts;
-
-  @override
-  void initState() {
-    super.initState();
-    _posts = _postService.getPostsByUser(widget.user.id);
-  }
-
-  @override
-  void dispose() {
-    _postService.dispose();
-    super.dispose();
-  }
-
-  void _retry() {
-    setState(() => _posts = _postService.getPostsByUser(widget.user.id));
-  }
+  User get user => widget.user;
 
   Future<void> _openSettings() async {
     try {
       await Navigator.push<void>(
         context,
-        MaterialPageRoute<void>(
-          builder: (_) => SettingsScreen(user: widget.user),
-        ),
+        MaterialPageRoute<void>(builder: (_) => SettingsScreen(user: user)),
       );
     } catch (error) {
       if (mounted) {
@@ -55,131 +38,467 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<Post>>(
-      future: _posts,
-      builder: (context, snapshot) {
-        final posts = snapshot.data ?? const <Post>[];
-        return ListView(
-          children: <Widget>[
-            _ProfileHeader(user: widget.user, onSettings: _openSettings),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 18, 16, 4),
-              child: Text(
-                'Posts',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800),
-              ),
-            ),
-            if (snapshot.connectionState == ConnectionState.waiting)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: CircularProgressIndicator()),
-              )
-            else if (snapshot.hasError)
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: <Widget>[
-                    Text(snapshot.error.toString(), textAlign: TextAlign.center),
-                    TextButton.icon(
-                      onPressed: _retry,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              )
-            else if (posts.isEmpty)
-              const Padding(
-                padding: EdgeInsets.all(32),
-                child: Center(child: Text('This user has no posts.')),
-              )
-            else
-              ...posts.map(
-                (post) => PostCard(
-                  post: post,
-                  author: widget.user,
-                  currentUser: widget.user,
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        body: NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) => [
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Container(
+                        height: 200,
+                        width: double.infinity,
+                        color: Colors.grey[300],
+                        child: CachedNetworkImage(
+                          imageUrl:
+                              "https://pbs.twimg.com/media/E159qBjXMAIKYpq.jpg",
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.grey[300],
+                            child: const Center(
+                              child: Icon(Icons.broken_image_outlined),
+                            ),
+                          ),
+                        ),
+                      ),
 
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.user, required this.onSettings});
-
-  final User user;
-  final VoidCallback onSettings;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: EdgeInsets.zero,
-      shape: const RoundedRectangleBorder(),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: <Widget>[
-            Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                tooltip: 'Settings',
-                onPressed: onSettings,
-                icon: const Icon(Icons.settings_outlined),
-              ),
-            ),
-            UserAvatar(imageUrl: user.image, radius: 56),
-            const SizedBox(height: 12),
-            Text(
-              user.fullName,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
+                      Positioned(
+                        bottom: 10,
+                        right: 10,
+                        child: CircleAvatar(
+                          radius: 15,
+                          backgroundColor: Colors.grey[400],
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 16,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -30,
+                        left: ScreenUtil().setWidth(15),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[600],
+                                shape: BoxShape.circle,
+                              ),
+                              child: ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: user.image,
+                                  width: ScreenUtil().setWidth(130),
+                                  height: ScreenUtil().setWidth(130),
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Container(
+                                    width: ScreenUtil().setWidth(130),
+                                    height: ScreenUtil().setWidth(130),
+                                    color: Colors.grey[400],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) =>
+                                      Container(
+                                        width: ScreenUtil().setWidth(130),
+                                        height: ScreenUtil().setWidth(130),
+                                        color: Colors.grey[400],
+                                        child: const Icon(
+                                          Icons.person,
+                                          size: 40,
+                                        ),
+                                      ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: CircleAvatar(
+                                radius: 15,
+                                backgroundColor: Colors.grey[300],
+                                child: const Icon(
+                                  Icons.camera_alt,
+                                  size: 16,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-            ),
-            Text('@${user.username}'),
-            const SizedBox(height: 18),
-            _ProfileInformation(icon: Icons.email_outlined, value: user.email),
-            _ProfileInformation(icon: Icons.phone_outlined, value: user.phone),
-            _ProfileInformation(
-              icon: Icons.school_outlined,
-              value: user.university,
-            ),
-            _ProfileInformation(
-              icon: Icons.location_on_outlined,
-              value: user.address,
-            ),
-            _ProfileInformation(
-              icon: Icons.cake_outlined,
-              value: user.birthDate,
+                  SizedBox(height: ScreenUtil().setHeight(40)),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: ScreenUtil().setWidth(15),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CustomFont(
+                          text: '${user.firstName} ${user.lastName}',
+                          fontWeight: FontWeight.bold,
+                          fontSize: ScreenUtil().setSp(20),
+                          color: Colors.black,
+                        ),
+                        Row(
+                          children: [
+                            CustomFont(
+                              text: '200',
+                              fontSize: ScreenUtil().setSp(14),
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            SizedBox(width: ScreenUtil().setWidth(5)),
+                            CustomFont(
+                              text: 'followers',
+                              fontSize: ScreenUtil().setSp(14),
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w100,
+                            ),
+                            SizedBox(width: ScreenUtil().setWidth(8)),
+                            Transform.translate(
+                              offset: Offset(0, -2),
+                              child: Icon(
+                                Icons.circle,
+                                size: ScreenUtil().setSp(5),
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(width: ScreenUtil().setWidth(8)),
+                            CustomFont(
+                              text: '55',
+                              fontSize: ScreenUtil().setSp(14),
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            SizedBox(width: ScreenUtil().setWidth(5)),
+                            CustomFont(
+                              text: 'following',
+                              fontSize: ScreenUtil().setSp(14),
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w100,
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: ScreenUtil().setHeight(12)),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: ScreenUtil().setWidth(0),
+                          ),
+                          child: Wrap(
+                            spacing: ScreenUtil().setWidth(10),
+                            runSpacing: ScreenUtil().setHeight(8),
+                            children: [
+                              CustomButton(
+                                icon: Icon(
+                                  Icons.add_circle_outline_rounded,
+                                  color: Colors.black,
+                                ),
+                                buttonName: 'Add to story',
+                                onPressed: () {},
+                              ),
+                              CustomButton(
+                                icon: Icon(
+                                  Icons.create_rounded,
+                                  color: Colors.black,
+                                ),
+                                buttonName: 'Edit Profile',
+                                onPressed: () {},
+                                buttonType: 'outlined',
+                              ),
+                              CustomButton(
+                                icon: Icon(
+                                  Icons.more_horiz,
+                                  color: Colors.black,
+                                ),
+                                onPressed: _openSettings,
+                                buttonType: 'outlined',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  TabBar(
+                    indicatorColor: FB_DARK_PRIMARY,
+                    tabs: [
+                      Tab(text: 'Posts'),
+                      Tab(text: 'About'),
+                      Tab(text: 'Photos'),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
+          body: TabBarView(
+            children: [
+              NewsFeedScreen(
+                currentUser: user,
+                userId: user.id,
+                showAds: false,
+              ),
+              SingleChildScrollView(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.info, size: 24, color: Colors.grey[700]),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Bio',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                '@${user.username}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: ScreenUtil().setHeight(12)),
+                      Row(
+                        children: [
+                          Icon(Icons.email, size: 24, color: Colors.grey[700]),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Email',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                user.email,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: ScreenUtil().setHeight(12)),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.location_on,
+                            size: 24,
+                            color: Colors.grey[700],
+                          ),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Location',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                user.address,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: ScreenUtil().setHeight(12)),
+                      Row(
+                        children: [
+                          Icon(Icons.school, size: 24, color: Colors.grey[700]),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Education',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                user.university,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: ScreenUtil().setHeight(12)),
+                      Row(
+                        children: [
+                          Icon(Icons.person, size: 24, color: Colors.grey[700]),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Gender',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                user.gender,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: ScreenUtil().setHeight(12)),
+                      Row(
+                        children: [
+                          Icon(Icons.cake, size: 24, color: Colors.grey[700]),
+                          SizedBox(width: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Birthday',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                ),
+                              ),
+                              Text(
+                                user.birthDate,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Column(
+                    children: [
+                      SizedBox(height: ScreenUtil().setHeight(2)),
+                      GridView.builder(
+                        itemCount: photoSources.length,
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 6,
+                              mainAxisSpacing: 6,
+                            ),
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          final src = photoSources[index];
+                          final isNetwork = src.startsWith('http');
+
+                          return InkWell(
+                            onTap: () =>
+                                customShowImageDialog(context, src: src),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: isNetwork
+                                  ? CachedNetworkImage(
+                                      imageUrl: src,
+                                      fit: BoxFit.cover,
+                                      placeholder: (context, url) => Container(
+                                        color: Colors.grey[300],
+                                        child: const Center(
+                                          child: Icon(Icons.image),
+                                        ),
+                                      ),
+                                      errorWidget: (context, url, error) =>
+                                          const Icon(
+                                            Icons.error,
+                                            color: Colors.red,
+                                          ),
+                                    )
+                                  : Image.asset(src, fit: BoxFit.cover),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ProfileInformation extends StatelessWidget {
-  const _ProfileInformation({required this.icon, required this.value});
-
-  final IconData icon;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value.isEmpty) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Row(
-        children: <Widget>[
-          Icon(icon, size: 20),
-          const SizedBox(width: 10),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
-  }
-}
+final List<String> photoSources = [
+  'assets/images/photo1.jpg',
+  'assets/images/photo2.jpg',
+  'assets/images/photo3.jpg',
+  'assets/images/photo4.png',
+  'assets/images/higanbana.jpg',
+  'assets/images/photo5.png',
+  'https://cdn11.bigcommerce.com/s-1b9100svju/product_images/uploaded_images/all-about-lily-of-the-valley5.jpg',
+  'https://floweraura-blog-img.s3.ap-south-1.amazonaws.com/Lotus.jpg',
+  'https://www.newnessplant.com/uploads/8c9ade2529aa43042abf5ada4360b304.jpg',
+];

@@ -19,10 +19,10 @@ Future<void> main() async {
     ),
   );
 }
- 
+
 class GarzonFacebook extends StatelessWidget {
   const GarzonFacebook({super.key});
- 
+
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
@@ -33,13 +33,9 @@ class GarzonFacebook extends StatelessWidget {
         return Consumer<ThemeProvider>(
           builder: (context, themeProvider, _) => MaterialApp(
             debugShowCheckedModeBanner: false,
-            title: 'Pongkan Social',
+            title: 'Garzon Facebook',
             themeMode: themeProvider.themeMode,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(seedColor: FB_PRIMARY),
-              scaffoldBackgroundColor: const Color(0xFFF4F5F7),
-              useMaterial3: true,
-            ),
+            theme: ThemeData(),
             darkTheme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: FB_PRIMARY,
@@ -60,4 +56,3 @@ class GarzonFacebook extends StatelessWidget {
     );
   }
 }
- 

@@ -26,11 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     final user = Session.authenticatedUser;
 
-    _titles = [
-      'pongkan',
-      'Notifications',
-      user?.fullName ?? 'Profile',
-    ];
+    _titles = ['pongkan', 'Notifications', user?.fullName ?? 'Profile'];
   }
 
   @override
@@ -53,7 +49,10 @@ class _HomeScreenState extends State<HomeScreen> {
             NewsFeedScreen(currentUser: user)
           else
             const SizedBox.shrink(),
-          const NotificationScreen(),
+          if (Session.authenticatedUser case final user?)
+            NotificationScreen(currentUser: user)
+          else
+            const SizedBox.shrink(),
           if (Session.authenticatedUser case final user?)
             ProfileScreen(user: user)
           else

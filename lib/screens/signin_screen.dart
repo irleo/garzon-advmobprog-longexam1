@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../widgets/custom_textformfield.dart';
+import '../widgets/custom_inkwell_button.dart';
 import '../constants.dart';
 import '../services/api_exception.dart';
 import '../services/user_service.dart';
 import '../session/session.dart';
+import '../widgets/custom_dialogs.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -14,156 +17,157 @@ class SignInScreen extends StatefulWidget {
 }
 
 class _SignInScreenState extends State<SignInScreen> {
-  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController usernameController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   final UserService _userService = UserService();
 
+  final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
   bool _isSubmitting = false;
-  String? _errorMessage;
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
+    usernameController.dispose();
+    passwordController.dispose();
     _userService.dispose();
     super.dispose();
   }
 
   Future<void> _signIn() async {
     if (!(_formKey.currentState?.validate() ?? false) || _isSubmitting) return;
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
+    setState(() => _isSubmitting = true);
     try {
       final user = await _userService.login(
-        username: _usernameController.text.trim(),
-        password: _passwordController.text,
+        username: usernameController.text.trim(),
+        password: passwordController.text,
       );
       Session.authenticatedUser = user;
       if (!mounted) return;
       Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
     } on ApiException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
+      if (!mounted) return;
+      customDialog(context, title: 'Login Failed', content: error.message);
     } catch (error) {
-      if (mounted) setState(() => _errorMessage = 'Sign in failed: $error');
+      if (!mounted) return;
+      customDialog(context, title: 'Login Failed', content: error.toString());
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
-  void _useDemoAccount() {
-    _usernameController.text = 'emilys';
-    _passwordController.text = 'emilyspass';
-    setState(() => _errorMessage = null);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 24.h),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 460),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    Image.asset(
-                      'assets/images/pongkan_logo_nobg.png',
-                      height: 130.h,
-                    ),
-                    SizedBox(height: 18.h),
-                    Text(
-                      'Welcome back',
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    SizedBox(height: 6.h),
-                    const Text(
-                      'Sign in with a DummyJSON user account.',
-                      textAlign: TextAlign.center,
-                    ),
-                    SizedBox(height: 28.h),
-                    TextFormField(
-                      controller: _usernameController,
-                      textInputAction: TextInputAction.next,
-                      autofillHints: const <String>[AutofillHints.username],
-                      decoration: const InputDecoration(
-                        labelText: 'Username',
-                        prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder(),
+      body: SingleChildScrollView(
+        child: SizedBox(
+          height: ScreenUtil().screenHeight,
+          width: ScreenUtil().screenWidth,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: ScreenUtil().screenWidth,
+                  height: ScreenUtil().setHeight(40),
+                  color: FB_DARK_PRIMARY,
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: ScreenUtil().setWidth(25),
+                  ),
+                  child: Column(
+                    children: [
+                      Image.asset(
+                        'assets/images/pongkan_logo_nobg.png',
+                        height: ScreenUtil().setHeight(150),
                       ),
-                      validator: (value) => (value?.trim().isEmpty ?? true)
-                          ? 'Enter your username'
-                          : null,
-                    ),
-                    SizedBox(height: 14.h),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      textInputAction: TextInputAction.done,
-                      onFieldSubmitted: (_) => _signIn(),
-                      autofillHints: const <String>[AutofillHints.password],
-                      decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          onPressed: () => setState(
-                            () => _obscurePassword = !_obscurePassword,
-                          ),
-                          icon: Icon(
+                      SizedBox(height: ScreenUtil().setHeight(10)),
+                      CustomTextformfield(
+                        height: ScreenUtil().setHeight(10),
+                        width: ScreenUtil().setWidth(10),
+                        controller: usernameController,
+                        validator: (value) =>
+                            value!.isEmpty ? 'Enter your username' : null,
+                        onSaved: null,
+                        fontSize: ScreenUtil().setSp(15),
+                        fontColor: FB_DARK_PRIMARY,
+                        hintTextSize: ScreenUtil().setSp(15),
+                        hintText: 'Username',
+                      ),
+                      SizedBox(height: ScreenUtil().setHeight(10)),
+                      CustomTextformfield(
+                        height: ScreenUtil().setHeight(10),
+                        width: ScreenUtil().setWidth(10),
+                        controller: passwordController,
+                        isObscure: _obscurePassword,
+                        validator: (value) =>
+                            value!.isEmpty ? 'Enter your password' : null,
+                        onSaved: null,
+                        fontSize: ScreenUtil().setSp(15),
+                        fontColor: FB_DARK_PRIMARY,
+                        hintTextSize: ScreenUtil().setSp(15),
+                        hintText: 'Password',
+                        suffixIcon: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                          child: Icon(
                             _obscurePassword
-                                ? Icons.visibility_outlined
-                                : Icons.visibility_off_outlined,
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                            color: FB_DARK_PRIMARY,
+                            size: ScreenUtil().setSp(22),
                           ),
                         ),
                       ),
-                      validator: (value) => (value?.isEmpty ?? true)
-                          ? 'Enter your password'
-                          : null,
-                    ),
-                    if (_errorMessage != null) ...<Widget>[
-                      SizedBox(height: 12.h),
-                      Text(
-                        _errorMessage!,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: colorScheme.error),
+                      SizedBox(height: ScreenUtil().setHeight(50)),
+                      CustomInkwellButton(
+                        onTap: _isSubmitting ? null : _signIn,
+                        height: ScreenUtil().setHeight(40),
+                        width: ScreenUtil().screenWidth,
+                        buttonName: _isSubmitting ? 'Signing in...' : 'Login',
+                        fontSize: ScreenUtil().setSp(15),
                       ),
                     ],
-                    SizedBox(height: 20.h),
-                    FilledButton(
-                      onPressed: _isSubmitting ? null : _signIn,
-                      style: FilledButton.styleFrom(
-                        backgroundColor: FB_DARK_PRIMARY,
-                        padding: EdgeInsets.symmetric(vertical: 14.h),
-                      ),
-                      child: _isSubmitting
-                          ? const SizedBox.square(
-                              dimension: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : const Text('Sign in'),
-                    ),
-                    TextButton(
-                      onPressed: _isSubmitting ? null : _useDemoAccount,
-                      child: const Text('Use demo account: emilys'),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                Container(
+                  width: ScreenUtil().screenWidth,
+                  height: ScreenUtil().setHeight(40),
+                  color: FB_DARK_PRIMARY,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'You do not have an account? ',
+                        style: TextStyle(
+                          color: Colors.grey.shade200,
+                          fontSize: ScreenUtil().setSp(15),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => customDialog(
+                          context,
+                          title: 'DummyJSON Login',
+                          content:
+                              'Enter any non-empty username and password to continue.',
+                        ),
+                        child: Text(
+                          'Register here',
+                          style: TextStyle(
+                            color: FB_LIGHT_PRIMARY,
+                            fontSize: ScreenUtil().setSp(15),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
